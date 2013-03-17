@@ -1,4 +1,4 @@
-package com.example.Mobile3GSwitch;
+package com.jdevelop.mobile.Mobile3GSwitch;
 
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
@@ -19,24 +19,37 @@ import java.lang.reflect.Method;
  */
 public class Switch3GWidgetProvider extends AppWidgetProvider {
 
-    private static final String ACTION_WIDGET_NOTIF = "com.example.Mobile3GSwitch.Switch3GWidgetProvider.UPDATE_ICON";
+    private static final String LOG = "Switch3G";
+
+    private static final String ACTION_WIDGET_NOTIF = "com.jdevelop.mobile.Mobile3GSwitch.Switch3GWidgetProvider.UPDATE_ICON";
 
     public static RemoteViews rview;
 
     private static int idx = 0;
 
+    private static final void d(String msg) {
+        Log.d(LOG, msg);
+    }
+
+    private static final void e(String msg, Throwable exc) {
+        Log.e(LOG, msg, exc);
+    }
+
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        d("Registering");
         updateWidgetState(context, "");
     }
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        d("Processing event");
         String str = intent.getAction();
         if (str.equals(ACTION_WIDGET_NOTIF)) {
             setMobileDataEnabled(context, (idx ^ 1) == 1);
             updateWidgetState(context, str);
         } else {
+            d("Event " + intent.getAction());
             super.onReceive(context, intent);
         }
     }
@@ -54,11 +67,12 @@ public class Switch3GWidgetProvider extends AppWidgetProvider {
 
             setMobileDataEnabledMethod.invoke(iConnectivityManager, enabled);
         } catch (Exception e) {
-            Log.e("Switch3G", "Can not set state", e);
+            e("Can not set state", e);
         }
     }
 
     static void updateWidgetState(Context paramContext, String paramString) {
+        d("Update widget state");
         RemoteViews localRemoteViews = buildUpdate(paramContext, paramString); //CALL HERE
         ComponentName localComponentName = new ComponentName(paramContext, Switch3GWidgetProvider.class);
         AppWidgetManager.getInstance(paramContext).updateAppWidget(localComponentName, localRemoteViews);
@@ -70,6 +84,7 @@ public class Switch3GWidgetProvider extends AppWidgetProvider {
         active.setAction(ACTION_WIDGET_NOTIF);
         PendingIntent actionPendingIntent = PendingIntent.getBroadcast(paramContext, 0, active, 0);
         rview.setOnClickPendingIntent(R.id.imageButton, actionPendingIntent);
+        d("Parameter string: " + paramString);
         if (paramString.equals(ACTION_WIDGET_NOTIF)) {
             if (idx == 0) {
                 rview.setImageViewResource(R.id.imageButton, R.drawable.off);
