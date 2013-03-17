@@ -6,8 +6,12 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
 import android.util.Log;
 import android.widget.RemoteViews;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
  * User: Eugene Dzhurinsky
@@ -23,18 +27,34 @@ public class Switch3GWidgetProvider extends AppWidgetProvider {
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-        Log.d("OOOPS", "Update!");
         updateWidgetState(context, "");
     }
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.d("OOOPS", "Here we gooo!");
         String str = intent.getAction();
         if (str.equals(ACTION_WIDGET_NOTIF)) {
+            setMobileDataEnabled(context, (idx ^ 1) == 1);
             updateWidgetState(context, str);
         } else {
             super.onReceive(context, intent);
+        }
+    }
+
+    private void setMobileDataEnabled(Context context, boolean enabled) {
+        try {
+            final ConnectivityManager conman = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            final Class conmanClass = Class.forName(conman.getClass().getName());
+            final Field iConnectivityManagerField = conmanClass.getDeclaredField("mService");
+            iConnectivityManagerField.setAccessible(true);
+            final Object iConnectivityManager = iConnectivityManagerField.get(conman);
+            final Class iConnectivityManagerClass = Class.forName(iConnectivityManager.getClass().getName());
+            final Method setMobileDataEnabledMethod = iConnectivityManagerClass.getDeclaredMethod("setMobileDataEnabled", Boolean.TYPE);
+            setMobileDataEnabledMethod.setAccessible(true);
+
+            setMobileDataEnabledMethod.invoke(iConnectivityManager, enabled);
+        } catch (Exception e) {
+            Log.e("Switch3G", "Can not set state", e);
         }
     }
 
