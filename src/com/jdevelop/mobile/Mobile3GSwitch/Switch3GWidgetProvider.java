@@ -25,8 +25,6 @@ public class Switch3GWidgetProvider extends AppWidgetProvider {
 
     public static RemoteViews rview;
 
-    private static int idx = 0;
-
     private static final void d(String msg) {
         Log.d(LOG, msg);
     }
@@ -45,8 +43,9 @@ public class Switch3GWidgetProvider extends AppWidgetProvider {
     public void onReceive(Context context, Intent intent) {
         d("Processing event");
         String str = intent.getAction();
+        boolean isEnabled = getMobileDataEnabled(context);
         if (str.equals(ACTION_WIDGET_NOTIF)) {
-            setMobileDataEnabled(context, (idx ^ 1) == 1);
+            setMobileDataEnabled(context, ! isEnabled);
             updateWidgetState(context, str);
         } else {
             d("Event " + intent.getAction());
@@ -54,21 +53,47 @@ public class Switch3GWidgetProvider extends AppWidgetProvider {
         }
     }
 
-    private void setMobileDataEnabled(Context context, boolean enabled) {
-        try {
-            final ConnectivityManager conman = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-            final Class conmanClass = Class.forName(conman.getClass().getName());
-            final Field iConnectivityManagerField = conmanClass.getDeclaredField("mService");
-            iConnectivityManagerField.setAccessible(true);
-            final Object iConnectivityManager = iConnectivityManagerField.get(conman);
-            final Class iConnectivityManagerClass = Class.forName(iConnectivityManager.getClass().getName());
-            final Method setMobileDataEnabledMethod = iConnectivityManagerClass.getDeclaredMethod("setMobileDataEnabled", Boolean.TYPE);
-            setMobileDataEnabledMethod.setAccessible(true);
+    private static final class Pair {
 
-            setMobileDataEnabledMethod.invoke(iConnectivityManager, enabled);
+        public final Object src;
+
+        public final Method m;
+
+        private Pair(Object src, Method m) {
+            this.src = src;
+            this.m = m;
+        }
+    }
+
+    private static Pair getConnectionMethod(Context context, String methodName, Class<?>... types) throws Exception {
+        final ConnectivityManager conman = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        final Class conmanClass = Class.forName(conman.getClass().getName());
+        final Field iConnectivityManagerField = conmanClass.getDeclaredField("mService");
+        iConnectivityManagerField.setAccessible(true);
+        final Object iConnectivityManager = iConnectivityManagerField.get(conman);
+        final Class iConnectivityManagerClass = Class.forName(iConnectivityManager.getClass().getName());
+        final Method method = iConnectivityManagerClass.getDeclaredMethod(methodName, types);
+        method.setAccessible(true);
+        return new Pair(iConnectivityManager, method);
+    }
+
+    private static void setMobileDataEnabled(Context context, boolean enabled) {
+        try {
+            Pair p = getConnectionMethod(context, "setMobileDataEnabled", Boolean.TYPE);
+            p.m.invoke(p.src, enabled);
         } catch (Exception e) {
             e("Can not set state", e);
         }
+    }
+
+    private static boolean getMobileDataEnabled(Context context) {
+        try {
+            Pair p = getConnectionMethod(context, "getMobileDataEnabled");
+            return (Boolean) p.m.invoke(p.src);
+        } catch (Exception e) {
+            e("Can not set state", e);
+        }
+        return false;
     }
 
     static void updateWidgetState(Context paramContext, String paramString) {
@@ -85,13 +110,20 @@ public class Switch3GWidgetProvider extends AppWidgetProvider {
         PendingIntent actionPendingIntent = PendingIntent.getBroadcast(paramContext, 0, active, 0);
         rview.setOnClickPendingIntent(R.id.imageButton, actionPendingIntent);
         d("Parameter string: " + paramString);
+        boolean isEnabled = getMobileDataEnabled(paramContext);
         if (paramString.equals(ACTION_WIDGET_NOTIF)) {
-            if (idx == 0) {
+            if (!isEnabled) {
                 rview.setImageViewResource(R.id.imageButton, R.drawable.off);
             } else {
                 rview.setImageViewResource(R.id.imageButton, R.drawable.on);
             }
-            idx = idx ^ 1;
+        } else {
+            if (getMobileDataEnabled(paramContext)) {
+                d("Setting ON icon by default");
+                rview.setImageViewResource(R.id.imageButton, R.drawable.on);
+            } else {
+                d("Mobile network is disabled");
+            }
         }
         return rview;
     }
