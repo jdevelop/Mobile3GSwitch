@@ -118,7 +118,7 @@ public class Switch3GWidgetProvider extends AppWidgetProvider {
                 rview.setImageViewResource(R.id.imageButton, R.drawable.on);
             }
         } else {
-            if (getMobileDataEnabled(paramContext)) {
+            if (isEnabled) {
                 d("Setting ON icon by default");
                 rview.setImageViewResource(R.id.imageButton, R.drawable.on);
             } else {
