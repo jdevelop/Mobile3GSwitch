@@ -36,7 +36,7 @@ public class Switch3GWidgetProvider extends AppWidgetProvider {
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         d("Registering");
-        updateWidgetState(context, "");
+        updateWidgetState(context);
     }
 
     @Override
@@ -45,8 +45,10 @@ public class Switch3GWidgetProvider extends AppWidgetProvider {
         String str = intent.getAction();
         boolean isEnabled = getMobileDataEnabled(context);
         if (str.equals(ACTION_WIDGET_NOTIF)) {
-            setMobileDataEnabled(context, ! isEnabled);
-            updateWidgetState(context, str);
+            setMobileDataEnabled(context, !isEnabled);
+            updateWidgetState(context);
+        } else if (str.equals("android.net.conn.CONNECTIVITY_CHANGE")) {
+            updateWidgetState(context);
         } else {
             d("Event " + intent.getAction());
             super.onReceive(context, intent);
@@ -96,34 +98,24 @@ public class Switch3GWidgetProvider extends AppWidgetProvider {
         return false;
     }
 
-    static void updateWidgetState(Context paramContext, String paramString) {
+    static void updateWidgetState(Context paramContext) {
         d("Update widget state");
-        RemoteViews localRemoteViews = buildUpdate(paramContext, paramString); //CALL HERE
+        RemoteViews localRemoteViews = buildUpdate(paramContext); //CALL HERE
         ComponentName localComponentName = new ComponentName(paramContext, Switch3GWidgetProvider.class);
         AppWidgetManager.getInstance(paramContext).updateAppWidget(localComponentName, localRemoteViews);
     }
 
-    private static RemoteViews buildUpdate(Context paramContext, String paramString) {
+    private static RemoteViews buildUpdate(Context paramContext) {
         rview = new RemoteViews(paramContext.getPackageName(), R.layout.main);
         Intent active = new Intent(paramContext, Switch3GWidgetProvider.class);
         active.setAction(ACTION_WIDGET_NOTIF);
         PendingIntent actionPendingIntent = PendingIntent.getBroadcast(paramContext, 0, active, 0);
         rview.setOnClickPendingIntent(R.id.imageButton, actionPendingIntent);
-        d("Parameter string: " + paramString);
         boolean isEnabled = getMobileDataEnabled(paramContext);
-        if (paramString.equals(ACTION_WIDGET_NOTIF)) {
-            if (!isEnabled) {
-                rview.setImageViewResource(R.id.imageButton, R.drawable.off);
-            } else {
-                rview.setImageViewResource(R.id.imageButton, R.drawable.on);
-            }
+        if (!isEnabled) {
+            rview.setImageViewResource(R.id.imageButton, R.drawable.off);
         } else {
-            if (isEnabled) {
-                d("Setting ON icon by default");
-                rview.setImageViewResource(R.id.imageButton, R.drawable.on);
-            } else {
-                d("Mobile network is disabled");
-            }
+            rview.setImageViewResource(R.id.imageButton, R.drawable.on);
         }
         return rview;
     }
