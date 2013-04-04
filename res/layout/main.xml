@@ -10,6 +10,7 @@
             android:id="@+id/imageButton"
             android:layout_gravity="top"
             android:src="@drawable/off"
+            android:background="@android:color/transparent"
             android:longClickable="false"/>
 </LinearLayout>
 
