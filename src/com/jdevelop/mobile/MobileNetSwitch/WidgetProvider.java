@@ -1,4 +1,4 @@
-package com.jdevelop.mobile.Mobile3GSwitch;
+package com.jdevelop.mobile.MobileNetSwitch;
 
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
@@ -17,11 +17,11 @@ import java.lang.reflect.Method;
  * User: Eugene Dzhurinsky
  * Date: 3/16/13
  */
-public class Switch3GWidgetProvider extends AppWidgetProvider {
+public class WidgetProvider extends AppWidgetProvider {
 
     private static final String LOG = "Switch3G";
 
-    private static final String ACTION_WIDGET_NOTIF = "com.jdevelop.mobile.Mobile3GSwitch.Switch3GWidgetProvider.UPDATE_ICON";
+    private static final String ACTION_WIDGET_NOTIF = "com.jdevelop.mobile.MobileNetSwitch.Switch3GWidgetProvider.UPDATE_ICON";
 
     public static RemoteViews rview;
 
@@ -101,13 +101,13 @@ public class Switch3GWidgetProvider extends AppWidgetProvider {
     static void updateWidgetState(Context paramContext) {
         d("Update widget state");
         RemoteViews localRemoteViews = buildUpdate(paramContext); //CALL HERE
-        ComponentName localComponentName = new ComponentName(paramContext, Switch3GWidgetProvider.class);
+        ComponentName localComponentName = new ComponentName(paramContext, WidgetProvider.class);
         AppWidgetManager.getInstance(paramContext).updateAppWidget(localComponentName, localRemoteViews);
     }
 
     private static RemoteViews buildUpdate(Context paramContext) {
         rview = new RemoteViews(paramContext.getPackageName(), R.layout.main);
-        Intent active = new Intent(paramContext, Switch3GWidgetProvider.class);
+        Intent active = new Intent(paramContext, WidgetProvider.class);
         active.setAction(ACTION_WIDGET_NOTIF);
         PendingIntent actionPendingIntent = PendingIntent.getBroadcast(paramContext, 0, active, 0);
         rview.setOnClickPendingIntent(R.id.imageButton, actionPendingIntent);
